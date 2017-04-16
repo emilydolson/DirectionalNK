@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2016, Sonia Singhal
+ * Copyright (C) 2016, 2017 Sonia Singhal
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,15 +36,18 @@ import java.util.Vector;
  */
 public class Configuration {
 	/** Program version */
-	public static final String version = "0.1.0";
+	public static final String version = "0.2.0";
 	/** Program creation date */
 	public static final String creationDate = "2017-01-07";
-	public static final String banner = "# N-K Model Simulation Version "+Configuration.version+" dated "+Configuration.creationDate;
+	/** Last modification date */
+	public static final String modifiedDate = "2017-04-15";
+	/** Banner for the program */
+	public static final String banner = "# N-K Model Simulation Version "+version+" dated "+creationDate+" last modified "+modifiedDate;
+	/** Copyright notice */
 	public static final String copyright = "# Copyright (C) 2016  Sonia Singhal"+
     "\n# This program comes with ABSOLUTELY NO WARRANTY."+
     "\n# This is free software, and you are welcome to redistribute it"+
 	"\n# under certain conditions; See accompanying license for details.";
-	// define default values if not given
 	/** debug level */
 	private int debugLevel = 0;
 	/** Number of genes in genome <= 30 */
@@ -63,9 +66,11 @@ public class Configuration {
 	private long seed = 32767;
 	/** seed for the random number generator for shocks */
 	private long sseed = 79;
+	/** correlation coefficient to create a correlated shock landscape */
+	private float rho = 0.0F;
 	/** Maximum possible genome values */
-	private int maxValue = (int) (Math.pow(2, N));
-	/** postfix to use on output files */
+	private int maxGenomes = (int) (Math.pow(2, N));
+	/** suffix to use on output files */
 	private String outputFile = "out.txt";
 	/** cutoff values */
 	private Vector<Float> cutoffs = new Vector<Float>();
@@ -73,7 +78,7 @@ public class Configuration {
 	private Vector<Float> shocks = new Vector<Float>();
 	/** boolean to determine whether shocks apply */
 	private boolean doShock = false;
-	/** Landscape definition */
+	/** Landscape definitions */
 	private Landscape landscape,shockLandscape;
 	/** Mutation probability for mutating a gene in MULTI_RANDOM strategy */
 	private float mutation_probability = (float) 0.1;
@@ -124,7 +129,7 @@ public class Configuration {
 		if(options.containsKey("n")){
 			N = Integer.parseInt(options.get("n"));
 			if(N >= Integer.SIZE) throw new RuntimeException("N must be < "+Integer.SIZE+" found "+N);
-			maxValue = (int)(Math.pow(2, N));
+			maxGenomes = (int)(Math.pow(2, N));
 		}
 		if(options.containsKey("k")) K = Integer.parseInt(options.get("k"));
 		if(K >= N) throw new RuntimeException("K must be < "+N+" found "+K);
@@ -151,8 +156,9 @@ public class Configuration {
 				cutoffs.add(Float.valueOf(value[i].trim()));
 			}
 		}
+		if(options.containsKey("rho")) rho = Float.parseFloat(options.get("rho"));
 		
-		// generate the evolution landscape
+		// generate the replication landscape
 		landscape = new Landscape(this);
 		// ensure that we have a default cutoff value
 		if(cutoffs.isEmpty()) cutoffs.add((float) 0.5);
@@ -165,16 +171,12 @@ public class Configuration {
 			}
 		}
 		
-		// generate the shock landscape
+		// generate the shock landscape.
 		if(!shocks.isEmpty()){
 			doShock = true;
-			if(options.containsKey("a")){
-				// if a file is given, use it. If it is generated, it will have peaks computed
-				shockLandscape = new Landscape(getN(),getK(),getEpistasis(),sseed,options.get("a"),true);
-			} else {
-				// create a random landscape for the shocks. Don't bother computing peaks
-				shockLandscape = new Landscape(getN(),getK(),getEpistasis(),sseed,null,false);
-			}
+			// if we are given a correlation coefficient, generate a correlated landscape, else generate a random landscape
+			shockLandscape = options.containsKey("rho") ? new Landscape(landscape,rho,sseed,options.get("a")) 
+					: new Landscape(getN(),getK(),getEpistasis(),sseed,options.get("a"),true);
 		}
 		// if debug, print out the options
 		if(debugLevel > 2){
@@ -191,6 +193,8 @@ public class Configuration {
 	 * Show help for the program
 	 */
 	public static void showHelp(){
+		System.out.println(banner);
+		System.out.println(copyright);
 		System.out.println("Use: java Configuration [optionName optionValue]...");
 		System.out.println("where optionName is (default in [])");
 		System.out.println("\t-c {initCut [nextGen nextCut] ... }  : cutoff values [{0.5}]");
@@ -213,6 +217,7 @@ public class Configuration {
 		System.out.println("\t-a file   : use landscape from file instead of generating a random landscape for shocks [null]");
 		System.out.println("\t-shocks {[Gen shock] ... } value : Do a shock selection after given generations [null]" );
 		System.out.println("\t-sseed value : random number generator seed for shocks [79]" );
+		System.out.println("\t-rho value : correlation coefficient for correlated shock landscape [0]" );
 		System.out.println("\t-minfit value : minimum fitness for replication [0.0]" );
 		System.out.println("\t-maxfit value : maximum fitness for replication [0.0]" );
 		return;
@@ -390,7 +395,7 @@ public class Configuration {
 	 * @return - maximum number of genomes possible
 	 */
 	public int getMaxGenomes() {
-		return maxValue;
+		return maxGenomes;
 	}
 
 	/**
@@ -406,11 +411,11 @@ public class Configuration {
 	 * @return - landscape for giving shocks
 	 */
 	public Landscape getShockLandscape(){
-		if(doShock) return shockLandscape;
-		else{
+		if(doShock)
+			return shockLandscape;
+		else
 			System.out.println("*Warning* - No shock landscape generated. Returning original landscape.");
-			return landscape;
-		}
+		return landscape;
 	}
 	
 	/**
@@ -489,7 +494,7 @@ public class Configuration {
 	 * @return - value of the genome
 	 */
 	public int getRandomGeneValue() {
-		return random.nextInt(maxValue);
+		return random.nextInt(maxGenomes);
 	}
 	
 	/**
@@ -572,9 +577,13 @@ public class Configuration {
 	public int getMaxPopulation() {
 		return options.containsKey("mp") ? Integer.valueOf(options.get("mp")) : 0;
 	}
-
+	
+	/**
+	 * Get the growth factor for replication
+	 * @return growth factor for replication
+	 */
 	public double getAlpha() {
-		return options.containsKey("alpha") ? Double.valueOf(options.get("alpha")) : 0;
+		return options.containsKey("alpha") ? Double.valueOf(options.get("alpha")) : 1;
 	}
 	
 	/**
@@ -583,5 +592,21 @@ public class Configuration {
 	 */
 	public boolean getShockState(){
 		return doShock;
+	}
+	
+	/**
+	 * Get the random number seed used for generating replication landscapes
+	 * @return - random number seed used when generating replication landscape
+	 */
+	public long getSeed(){
+		return seed;
+	}
+	
+	/**
+	 * Get the random number seed used for generating the shock landscape
+	 * @return - random number seed used when generating the shock landscape
+	 */
+	public long getSseed(){
+		return sseed;
 	}
 }
