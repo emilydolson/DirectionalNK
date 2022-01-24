@@ -128,7 +128,7 @@ public class TraceWriter {
 			Iterator<Integer> iter = genomes.stream().iterator();
 			while(iter.hasNext()){
 				int g = iter.next();
-				writerStream.println(String.format(format,generation,g,count[g],fitness[g],cutoff,shockFitness[g],shock));	
+				writerStream.println(String.format(format,generation,g,count[g],fitness[g],cutoff,shock, shockFitness[g]));	
 			}
 			break;
 		case NONE:

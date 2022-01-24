@@ -78,6 +78,7 @@ public class PopulationCounter implements Population {
 	
 	/**
 	 * Create a population counter
+	 * @param config - Configuration to use
 	 */
 	public PopulationCounter(Configuration config) {
 		this.config = config;
@@ -405,6 +406,15 @@ public class PopulationCounter implements Population {
 	public void writePopulation() {
 		String outputFile = config.getFileName("pop-");
 		writePopulation(outputFile);
+		return;
+	}
+	
+	public void writePopulation(PrintStream out) {
+		Iterator<Integer> iter = genomes.stream().iterator();
+		while(iter.hasNext()){
+			int g = iter.next();
+			out.println(String.format("%d %d %d %f %f", generation, g,count[g], fitness[g], shockFitness[g]));
+		}
 		return;
 	}
 	

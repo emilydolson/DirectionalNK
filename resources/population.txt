@@ -1,0 +1,4 @@
+# N-K Model Simulation Version 0.0.3 dated 2016-12-31
+# Created 2017-01-02T16:33:06.966-08:00[America/Los_Angeles]
+# genome count
+18901 100
