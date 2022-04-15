@@ -82,7 +82,7 @@ public class SimLoop {
 					//String file = directory +N+"-"+k+"-"+seed+".txt";
 					argv[3] = Integer.toString(Kvals[k]);
 					argv[5] = Long.toString(seed);
-					argv[7] = file;
+					argv[7] = directory;
 					argv[9] = file;
 					argv[25] = Long.toString(sseed);
 					write(out,file);
