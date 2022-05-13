@@ -96,6 +96,7 @@ public class Configuration {
 	private float maxFit = 0.0F;
 	/** flag to indicate if population traces should be written */
 	private boolean tracePop = false;
+	private int maxPop = (int) (Math.pow(2, 31)-1);
 	
 	/** Options from the command line or options file */
 	private HashMap<String,String> options = new HashMap<String,String>();
@@ -160,6 +161,7 @@ public class Configuration {
 		}
 		if(options.containsKey("rho")) rho = Float.parseFloat(options.get("rho"));
 		if(options.containsKey("tracepop")) tracePop = Boolean.parseBoolean(options.get("tracepop"));
+		if(options.containsKey("mp")) maxPop = Integer.parseInt(options.get("mp"));
 		
 		// generate the replication landscape
 		landscape = new Landscape(this);
@@ -216,6 +218,7 @@ public class Configuration {
 		System.out.println("\t-r value  : probability of a bit switch in multi-random strategy [0.1]");
 		System.out.println("\t-s value  : starting random number seed [32767]");
 		System.out.println("\t-v value  : show simulation progress every value steps [10]");
+		System.out.println("\t-mp value : maximum population size");
 		System.out.println("\t-trace value  : write out a trace of the simulation {TSV|CSV|NONE} [NONE]");
 		System.out.println("\t-tracepop value  : write out intermediate populations during simulation {false|true} [false]");
 		System.out.println("\t-a file   : use landscape from file instead of generating a random landscape for shocks [null]");
@@ -587,7 +590,8 @@ public class Configuration {
 	 * @return maximum population. 0 returned if not defined
 	 */
 	public int getMaxPopulation() {
-		return options.containsKey("mp") ? Integer.valueOf(options.get("mp")) : 0;
+		return maxPop;
+		//return options.containsKey("mp") ? Integer.valueOf(options.get("mp")) : 0;
 	}
 	
 	/**

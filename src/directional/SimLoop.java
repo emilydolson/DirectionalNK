@@ -30,8 +30,10 @@ public class SimLoop {
 	 */
 	public static void main(String[] args) {
 		int N = 15;
-		double mu[] = new double [] {0.000005, (double)1/15};
+		double mu[] = new double [] {0.000005, 0.0001, 0.001, 0.01, (double)1/15};
+		//double mu[] = new double [] {(double)1/15};
 		int Kvals[] = new int [] {0, 1, 2, 5, 10, 14};
+		//int Kvals [] = new int [] {0};
 		long seed;
 		long sseed;
 		// double cuts[] = new double [] {0.1, 10, 0.71, 100};
