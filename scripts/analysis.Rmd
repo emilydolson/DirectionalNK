@@ -10,7 +10,7 @@ This document (created using Rmarkdown) contains: 1) all analysis code used to g
 
 First, lets setup our R environment
 
-```{r}
+```{r message=FALSE}
 library(ggplot2)
 library(reshape)
 library(dplyr)
@@ -22,7 +22,7 @@ library(tidygraph)
 
 Next, we'll load in all our data, which are expected to be in the directory above the one where this script is.
 
-```{r message=FALSE, results='hide', cache=TRUE}
+```{r message=FALSE, results='hide', cache=TRUE, cache.lazy = FALSE}
 base <- "../"
 
 # Read in the file that contains the names of the output documents
@@ -394,13 +394,13 @@ First, we set up the data:
 
 ```{r, cache=TRUE}
 # Read in a file containing all the edges for this fitness landscape graph
-edges <- read_csv("repos/DirectionalNK/scripts/edges_6.csv")
+edges <- read_csv("edges_6.csv")
 
 # Read in fitnesses from reproduction fitness landscape
-repro_fits <- read_csv("repos/DirectionalNK/scripts/repro_fits_1963.csv")
+repro_fits <- read_csv("repro_fits_1963.csv")
 
 # Read in fitnesses from shock landscape
-shock_fits <- read_csv("repos/DirectionalNK/scripts/shock_fits_1963.csv")
+shock_fits <- read_csv("shock_fits_1963.csv")
 
 # Clean up dataframes
 colnames(repro_fits)[1] <- "name"
@@ -414,7 +414,7 @@ edges$from <- as.character(edges$from)
 edges$to <- as.character(edges$to)
 
 # Read in population time series data from run of evolutioon
-pop <- read_table("repos/DirectionalNK/src/outs/popt-N6-k1-s1963-r0.001-Gradual.txt",skip = 3)
+pop <- read_table("../outs/popt-N6-k1-s1963-r0.001-Gradual.txt",skip = 3)
 
 # Clean up data frame
 colnames(pop) <- c("gen", "genome", "count","fitness", "shockfitness", "placeholder")
@@ -467,15 +467,14 @@ ggraph(graph, layout = 'manual', x=max(ones)/2 * (pos)/(total+1), y=ones) +
   geom_node_circle(aes(fill=fitness, 
                        r = (.05*(count>0)) + sqrt(count)/200, 
                        alpha=shock_fitness>=.66, 
-                       color=shock_fitness>=.66, 
-                       x = stroke=shock_fitness>=.66 )) +
+                       color=shock_fitness>=.66)) +
   theme(legend.position = "none") +
-  theme_graph() + 
-  scale_fill_viridis_c() + 
+  theme_graph(base_family = 'Helvetica') + 
+  scale_fill_viridis_c("Fitness") + 
   coord_fixed(ratio = .4) + 
-  scale_edge_color_viridis() + 
+  scale_edge_color_viridis("Fitness") + 
   scale_alpha_discrete(range = c(.5,1)) + 
-  scale_color_manual(values=c("FALSE"="white", "TRUE"="black"))
+  scale_color_manual("Can survive highest shock", values=c("FALSE"="white", "TRUE"="black"))
 
 ```
 
@@ -487,15 +486,14 @@ ggraph(graph, layout = 'manual', x=max(ones)/2 * (pos)/(total+1), y=ones) +
   geom_node_circle(aes(fill=shock_fitness, 
                        r = (.05*(count>0)) + sqrt(count)/200, 
                        alpha=shock_fitness>=.66, 
-                       color=shock_fitness>=.66, 
-                       x = stroke=shock_fitness>=.66 )) +
+                       color=shock_fitness>=.66)) +
   theme(legend.position = "none") +
-  theme_graph() + 
-  scale_fill_viridis_c() + 
+  theme_graph(base_family = 'Helvetica') + 
+  scale_fill_viridis_c("Fitness") + 
   coord_fixed(ratio = .4) + 
-  scale_edge_color_viridis() + 
+  scale_edge_color_viridis("Fitness") + 
   scale_alpha_discrete(range = c(.5,1)) + 
-  scale_color_manual(values=c("FALSE"="white", "TRUE"="black"))
+  scale_color_manual("Can survive highest shock", values=c("FALSE"="white", "TRUE"="black"))
 
 ```
 
