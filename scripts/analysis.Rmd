@@ -18,6 +18,9 @@ library(tidyr)
 library(readr)
 library(ggraph)
 library(tidygraph)
+library(captioner)
+
+fig_nums <- captioner()
 ```
 
 Next, we load in all our data, which are expected to be in the directory above the one where this script is.
@@ -214,7 +217,9 @@ survivals <- survivals %>% mutate(mu = case_when(
 
 First, we assess the effect of different evolutionary regimes on the probability of a population surviving until the end of the experiment:
 
-```{r, cache=TRUE, message=FALSE, fig.cap="Proprtion of replicates surviving until end"}
+```{r, cache=TRUE, message=FALSE}
+
+# fig_nums("surviving", "Proprtion of replicates surviving until end")
 
 pd <- position_dodge(.5)
 ggplot(data = survivals %>%  # Do some additional processing of the data
@@ -251,7 +256,8 @@ ggplot(data = survivals %>%  # Do some additional processing of the data
       facet_wrap(~mu, labeller = labeller(mu=label_both)) +
       scale_fill_viridis_d(name = "Treatment") +
       ylab("Proportion of persisting populations") +
-      xlab("K")
+      xlab("K") +
+      ggtitle(fig_nums("surviving"))
 
 ```
 
@@ -259,7 +265,9 @@ ggplot(data = survivals %>%  # Do some additional processing of the data
 
 Next, we compare the maximum fitness at the end of the run (in both landscapes) across conditions (for runs that did not go extinct):
 
-```{r, cache=TRUE, warning=FALSE, fig.cap="Final maximum fitness"}
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+fig_nums("max_fitness", "Final maximum fitness")
+
 # Pivot shock and reproductive fitness into a single column
 # so we can easily plot a comparison
 ggplot(data = survivals %>%
@@ -293,14 +301,17 @@ ggplot(data = survivals %>%
   facet_wrap(~mu, labeller = labeller(mu = label_both)) +
   ylab("Final maximum population fitness") +
   scale_linetype("Treatment") +
-  xlab("K")
+  xlab("K") +
+  ggtitle(fig_nums("max_fitness"))
 
 ```
 
 
 We make the same plot for average fitness (recall that there the shock landscape is the only source of death, so there are many low fitness individuals in the population at any point in time):
 
-```{r, cache=TRUE, warning=FALSE, fig.cap="Final average fitness"}
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+fig_nums("avg_fitness", "Final average fitness")
+
 ggplot(data = survivals %>% 
                 filter(gen==51) %>% 
                 pivot_longer(c(average, shockAvg), 
@@ -327,7 +338,8 @@ ggplot(data = survivals %>%
   ylab("Final average population fitness") +
   scale_alpha_discrete(range = c(1,.6)) +
   scale_linetype("Treatment") +
-  xlab("K")
+  xlab("K") +
+  ggtitle(fig_nums("avg_fitness"))
 ```
 
 
@@ -335,9 +347,12 @@ ggplot(data = survivals %>%
 
 Next, we analyze the behavior of maximum fitness (within each individual population) over time:
 
-```{r, cache=TRUE, fig.cap="Maximum fitness over time"}
+```{r, cache=TRUE, message=FALSE}
+fig_nums("max_fitness_ts", "Maximum fitness over time")
+
 ggplot(data = trace %>% 
-         filter(mu==.01, k==10),  # Plot a single representative combination of mu and k 
+         # Plot a single representative combination of mu and k
+         filter(mu==.01, k==10), 
        aes(x = gen, y = max)
   ) +
   facet_wrap(~regime) +  # A panel for each shock regime
@@ -371,12 +386,15 @@ ggplot(data = trace %>%
   scale_fill_manual("Landscape", 
                     values = c("Reproduction"="#440154", "Shock"="#fde725")) +
   ylab("Average Maximum Fitness") +
-  xlab("Generation")
+  xlab("Generation") +
+  ggtitle(fig_nums("max_fitness_ts"))
 ```
 
 And we do the same for average fitness:
 
-```{r, cache=TRUE, fig.cap="Average fitness over time"}
+```{r, cache=TRUE, message=FALSE}
+fig_nums("avg_fitness_ts", "Average fitness over time")
+
 ggplot(data = trace %>% 
          filter(mu==.01, k==10), 
        aes(x = gen, y = average)) +
@@ -407,7 +425,35 @@ ggplot(data = trace %>%
   scale_fill_manual("Landscape", 
                     values = c("Reproduction"="#440154", "Shock"="#fde725")) +
   ylab("Average Mean Fitness") +
-  xlab("Generation")
+  xlab("Generation") +
+  ggtitle(fig_nums("avg_fitness_ts"))
+```
+
+
+### Population size
+
+A major part of what is happening here appears to be the effect of the gradual regime allowing a larger population than the sudden regime. Here we plot population:
+
+```{r, cache=TRUE, message=FALSE}
+
+fig_nums("population", "Population size over time")
+
+ggplot(data = trace %>% 
+         filter(mu==.01, k==10), 
+       aes(x = gen, y = population)) +
+  facet_wrap(~regime) +  # One panel for each regime
+  # Bootstrapped 95% CI around mean count of unique genotypes
+  stat_summary(fun.data="mean_cl_boot", geom="ribbon", alpha=.5) +
+  # Mean count of unique genotypes
+  stat_summary(fun.data="mean_cl_boot", geom="line", alpha=.5) +
+  theme_bw(base_size = 14) + 
+  theme(panel.grid.minor = element_blank(), 
+        panel.grid.major = element_line(color = "grey91"),
+        strip.text.y = element_text(face = "italic"),
+        legend.position = "none")  +
+  ylab("Population") +
+  xlab("Generation") +
+  ggtitle(fig_nums("population"))
 ```
 
 
@@ -415,7 +461,9 @@ ggplot(data = trace %>%
 
 Diversity clearly plays an important role in the dynamics we observe. Here, we plot the number of unique genotypes over time in each condition:
 
-```{r, cache=TRUE, fig.cap="Unique genotypes over time"}
+```{r, cache=TRUE, message=FALSE}
+fig_nums("uniques", "Unique genotypes over time")
+
 ggplot(data = trace %>% 
          filter(mu==.01, k==10), 
        aes(x = gen, y = uniques)) +
@@ -430,12 +478,18 @@ ggplot(data = trace %>%
         strip.text.y = element_text(face = "italic"),
         legend.position = "none")  +
   ylab("Unique genotypes") +
-  xlab("Generation")
+  xlab("Generation") +
+  ggtitle(fig_nums("uniques"))
+
 ```
 
 A lot of this trend is likely being driven by population size, so it may also be worth looking at the same plot normalized by population:
 
-```{r, cache=TRUE, fig.cap="Unique genotypes over time, normalized by population size"}
+```{r, cache=TRUE, message=FALSE}
+
+fig_nums("normalized_uniques", 
+         "Unique genotypes over time, normalized by population")
+
 ggplot(data = trace %>% 
          filter(mu==.01, k==10), 
        aes(x = gen, y = uniques/population)) +
@@ -450,7 +504,9 @@ ggplot(data = trace %>%
         strip.text.y = element_text(face = "italic"),
         legend.position = "none")  +
   ylab("Unique genotypes") +
-  xlab("Generation")
+  xlab("Generation") +
+  ggtitle(fig_nums("normalized_uniques"))
+
 ```
 
 
@@ -460,7 +516,7 @@ We see relatively high fitnesses in both landscapes. The next obvious set of que
 
 One possibility is that successful populations are finding regions of the fitness landscape that are highly fit in both landscapes. To assess this possibility, we measure the correlation between reproductive fitness and shock fitness among evolved genotypes in the population. We measure this correlation for each population:
 
-```{r, cache=TRUE, warning=FALSE, fig.cap="Correlation between reproductive and shock fitness in evolved genomes"}
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
 # Make new dataframe with all the correlations
 df <- pops %>% 
         # Group by run (as indicated by random seed used for each run)
@@ -497,6 +553,10 @@ df <- df %>% mutate(mu = case_when(
 )
 
 # Actually plot the data
+
+fig_nums("correlations", 
+      "Correlation between landscapes in evolved genomes")
+
 ggplot(df %>% filter(k== 10)) + 
   geom_boxplot(aes(x=as.factor(mu), y=r, fill=regime)) + 
   xlab("Mu") + 
@@ -506,7 +566,8 @@ ggplot(df %>% filter(k== 10)) +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_line(color = "grey91"),
         strip.text.y = element_text(face = "italic"), 
-        legend.position = "bottom")
+        legend.position = "bottom") +
+  ggtitle(fig_nums("correlations"))
 
 ```
 
@@ -593,7 +654,9 @@ graph <- graph %E>%
 
 Next, we visualize the data for the reproductive landscape:
 
-```{r, cache=TRUE, warning=FALSE, fig.cap="Graph of the full reproductive fitness landscape with final population size represented by node size"}
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+fig_nums("repro_landscape", "Full reproductive fitness landscape")
+
 ggraph(graph, layout = 'manual', x=max(ones)/2 * (pos)/(total+1), y=ones) +
     geom_edge_link(aes(color=fitness)) +
     geom_node_circle(aes(fill=fitness, 
@@ -611,13 +674,17 @@ ggraph(graph, layout = 'manual', x=max(ones)/2 * (pos)/(total+1), y=ones) +
                        values=c("FALSE"="white", "TRUE"="black"), 
                        guide = guide_legend(override.aes = 
                                               list(fill = "#008080") )) +
-    guides(edge_color=FALSE)  # Edge color legend is same as fill
+    guides(edge_color=FALSE) + # Edge color legend is same as fill
+    ggtitle(fig_nums("repro_landscape"))
 
 ```
 
 And the shock landscape:
 
-```{r, cache=TRUE, warning=FALSE, fig.cap="Graph of the full shock fitness landscape with final population size represented by node size"}
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+
+fig_nums("shock_landscape", "Full shock fitness landscape")
+
 ggraph(graph, layout = 'manual', x=max(ones)/2 * (pos)/(total+1), y=ones) +
     geom_edge_link(aes(color=shock_fitness)) +
     geom_node_circle(aes(fill=shock_fitness, 
@@ -635,7 +702,8 @@ ggraph(graph, layout = 'manual', x=max(ones)/2 * (pos)/(total+1), y=ones) +
                        values=c("FALSE"="white", "TRUE"="black"), 
                        guide = guide_legend(override.aes = 
                                               list(fill = "#008080") )) +
-    guides(edge_color=FALSE)  # Edge color legend is same as fill
+    guides(edge_color=FALSE) +  # Edge color legend is same as fill
+    ggtitle(fig_nums("shock_landscape"))
 
 ```
 
